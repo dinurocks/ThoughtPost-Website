@@ -227,8 +227,8 @@ button {
 }
 
 button:focus {
-  outline: 1px dotted;
-  outline: 5px auto -webkit-focus-ring-color;
+  outline: 0px dotted;
+  /* outline: 5px auto -webkit-focus-ring-color; */
 }
 
 input,
@@ -2559,7 +2559,9 @@ fieldset:disabled a.btn {
   color: #fff;
   background-color: #007bff;
   border-color: #007bff;
+  
 }
+
 
 .btn-primary:hover {
   color: #fff;
@@ -2707,6 +2709,7 @@ fieldset:disabled a.btn {
   color: #212529;
   background-color: #ffc107;
   border-color: #ffc107;
+  border-radius: 20px;
 }
 
 .btn-warning:hover {
@@ -2744,12 +2747,14 @@ fieldset:disabled a.btn {
   color: #fff;
   background-color: #dc3545;
   border-color: #dc3545;
+  
 }
 
 .btn-danger:hover {
   color: #fff;
   background-color: #c82333;
   border-color: #bd2130;
+  
 }
 
 .btn-danger:focus, .btn-danger.focus {
@@ -3014,6 +3019,7 @@ fieldset:disabled a.btn {
 .btn-outline-danger {
   color: #dc3545;
   border-color: #dc3545;
+ 
 }
 
 .btn-outline-danger:hover {
@@ -6021,7 +6027,7 @@ a.close.disabled {
   z-index: 1040;
   width: 100vw;
   height: 100vh;
-  background-color: #000;
+  background-color: rgb(190, 149, 149);
 }
 
 .modal-backdrop.fade {
@@ -10220,3 +10226,4 @@ a.text-dark:hover, a.text-dark:focus {
   }
 }
 /*# sourceMappingURL=bootstrap.css.map */
+

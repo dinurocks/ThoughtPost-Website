@@ -1,8 +1,9 @@
 const myReducertkn = (state, action) => {
     if(!state) {
       return {
-    jwt:"",
-      id:"" 
+      jwt:"",         //intiial values 
+      id:"" ,
+      username:""
       };
     }
 
@@ -10,10 +11,11 @@ const myReducertkn = (state, action) => {
       case "SAVE_TOKEN":
         console.log(action.data);
         return {
-          ...state,
+          ...state,    //copy previous data
           jwt: action.data.token,
 
-          id: action.data.userId
+          id: action.data.userId,
+          username: action.data.username
         
 
         }
