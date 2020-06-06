@@ -17,7 +17,7 @@ class Login extends Component {
       useremail: "",
     };
 
-   localStorage.getItem("Token") && this.props.history.push('/homepage')
+    localStorage.getItem("Token") && this.props.history.push("/homepage");
   }
 
   handleChange = (event) => {
@@ -26,7 +26,7 @@ class Login extends Component {
   register = () => {
     this.props.history.push("/home");
   };
-  
+
   validate = () => {
     let mobileError = "";
     let passwordError = "";
@@ -38,7 +38,7 @@ class Login extends Component {
 
     let passwrd = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d^a-zA-Z0-9].{5,50}$/;
     !passwrd.test(this.state.password)
-      ? (passwordError = "Min chars '6', 1 letter ") 
+      ? (passwordError = "Min chars '6', 1 letter ")
       : (passwordError = "");
     if (mobileError || passwordError) {
       this.setState({ mobileError, passwordError });
@@ -52,14 +52,14 @@ class Login extends Component {
     if (this.validate()) {
       checkUserMobPassword(this.state)
         .then((res) => {
-          console.log(res);
+          // console.log(res);
           this.setState({
             token: res.headers.auth,
             userId: res.data.userid,
             username: res.data.name,
             useremail: res.data.email,
           });
-          
+
           localStorage.setItem("Token", res.headers.auth);
 
           this.props.save(
@@ -68,14 +68,16 @@ class Login extends Component {
             this.state.username,
             this.state.useremail
           );
-          console.log("state token id user", this.state.userId);
+          // console.log("state token id user", this.state.userId);
           this.props.history.push("/homepage");
         })
         .catch((err) => {
           if (err.response) {
+            alert(err.response.data);
             console.log(err.response.data);
           } else {
             console.log(err);
+            alert(err);
           }
         });
     }
@@ -83,69 +85,77 @@ class Login extends Component {
 
   render() {
     return (
-      <div>
+      <div className="bckgrnd">
         <div className="container">
           <div className="contentAlign">
-            
-            <div
-              style={{
-                textAlign: "center",
-                fontWeight: "bold",
-                fontSize: 30,
-                marginTop: "10%",
-                marginBottom: 35,
-              
-              }}
-            >
-              Login To ThoughtPost
-            </div>
-              
             <form onSubmit={this.handleSubmit}>
-              <div className="form-group row formAlign">
-                <label className="col-form-label text">Mobile</label>
-                <div className="input">
-                  <input
-                    type="text"
-                    onChange={this.handleChange}
-                    value={this.state.mobile}
-                    className="form-control"
-                    name="mobile"
-                    placeholder="Enter your mobile number"
-                  />
-                </div>
-              </div>
-             
-            <span>{this.state.mobileError}</span>
-              <div className="form-group row formAlign ">
-                <label className=" col-form-label text">Password</label>
-                <div className="input">
-                  <input
-                    type="password"
-                    onChange={this.handleChange}
-                    value={this.state.password}
-                    className="form-control"
-                    name="password"
-                    placeholder="Enter your password"
-                  />
-                </div>
-              </div>
-              <span>{this.state.passwordError}</span>
-
-              <div>
-                <button type="submit" className="btn  jjj">
-                <p style={{color:'white', fontWeight:'bold', height:'auto'}}>Login</p>
-                </button>
-              </div>
-
-              <div className="row ooo">
-                <p id="aaaa">Don't have an account?</p>
-                <button
-                  id="aaa"
-                  className="btn btn-link"
-                  onClick={this.register}
+              <div className="formBackground">
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    fontSize: 30,
+                    paddingTop: "20%",
+                    marginBottom: 35,
+                    // paddingTop: 105,
+                  }}
                 >
-                  Register Here
-                </button>
+                  Login To ThoughtPost
+                </div>
+                <div className="form-group row formAlign">
+                  <label className="col-form-label text">Mobile</label>
+                  <div className="input">
+                    <input
+                      type="text"
+                      onChange={this.handleChange}
+                      value={this.state.mobile}
+                      className="form-control"
+                      name="mobile"
+                      placeholder="Enter your mobile number"
+                    />
+                  </div>
+                </div>
+
+                <span>{this.state.mobileError}</span>
+                <div className="form-group row formAlign ">
+                  <label className=" col-form-label text">Password</label>
+                  <div className="input">
+                    <input
+                      type="password"
+                      onChange={this.handleChange}
+                      value={this.state.password}
+                      className="form-control"
+                      name="password"
+                      placeholder="Enter your password"
+                    />
+                  </div>
+                </div>
+                <span>{this.state.passwordError}</span>
+
+                <div>
+                  <button type="submit" className="btn  jjj">
+                    <p
+                      style={{
+                        color: "white",
+                        fontWeight: "bold",
+                        height: "auto",
+                      }}
+                    >
+                      Login
+                    </p>
+                  </button>
+                </div>
+
+                <div className="row ooo" style={{ paddingBottom: 167 }}>
+                  <p id="aaaa">Don't have an account?</p>
+                  <button
+                    id="aaa"
+                    className="btn btn-link"
+                    onClick={this.register}
+                  >
+                    Register Here
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -154,7 +164,6 @@ class Login extends Component {
     );
   }
 }
-
 
 const mapStateToProps = (state) => ({
   token: state.myReducertkn.tkn,

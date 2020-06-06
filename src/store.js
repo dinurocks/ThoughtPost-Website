@@ -1,16 +1,16 @@
-import { createStore, combineReducers } from 'redux';
-import myReducertkn from './reducers/reducer';
+import { createStore, combineReducers } from "redux";
+import myReducertkn from "./reducers/reducer";
 
 const rootReducer = combineReducers({
-    myReducertkn
+  myReducertkn,
 });
 
-
-const persistedState= localStorage.getItem('myStore')?JSON.parse(localStorage.getItem('myStore')):{};
-const store= createStore(rootReducer,persistedState);
-store.subscribe(() => 
-{
-    console.log("Store=>",store.getState());
-    localStorage.setItem('myStore',JSON.stringify(store.getState()));
+const persistedState = localStorage.getItem("myStore")
+  ? JSON.parse(localStorage.getItem("myStore"))
+  : {};
+const store = createStore(rootReducer, persistedState);
+store.subscribe(() => {
+  // console.log("Store=>",store.getState());
+  localStorage.setItem("myStore", JSON.stringify(store.getState()));
 });
 export default store;

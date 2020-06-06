@@ -19,10 +19,9 @@ export class Registration extends Component {
       confirmPasswordError: "",
     };
 
-    localStorage.getItem("Token") && this.props.history.push('/homepage')
+    localStorage.getItem("Token") && this.props.history.push("/homepage");
   }
 
-  
   validate = () => {
     let nameError = "";
     let emailError = "";
@@ -101,110 +100,118 @@ export class Registration extends Component {
   };
   render() {
     return (
-      <div>
+      <div className="bckgrnd">
         <div className="container">
           <div className="contentAlign">
-            <div
-              style={{
-                textAlign: "center",
-                fontWeight: "bold",
-                fontSize: 30,
-                marginTop: "2%",
-                marginBottom: 35,
-              }}
-            >
-              Register to ThoughtPost
-            </div>
             <form onSubmit={this.handleSubmit}>
-              <div className="form-group row formAlign">
-                <label className="col-form-label text">Name</label>
-                <div className="input">
-                  <input
-                    type="text"
-                    onChange={this.handleChange}
-                    value={this.state.name}
-                    className="form-control"
-                    name="name"
-                    placeholder="Enter your name"
-                  />
-                </div>
-              </div>
-              <span>{this.state.nameError}</span>
-
-              <div className="form-group row formAlign">
-                <label className=" col-form-label text">Email</label>
-                <div className="input">
-                  <input
-                    type="text"
-                    onChange={this.handleChange}
-                    value={this.state.email}
-                    className="form-control"
-                    name="email"
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </div>
-              <span>{this.state.emailError}</span>
-
-              <div className="form-group row formAlign">
-                <label className="col-form-label text">Mobile</label>
-                <div className="input">
-                  <input
-                    type="text"
-                    onChange={this.handleChange}
-                    value={this.state.mobile}
-                    className="form-control"
-                    name="mobile"
-                    placeholder="Enter your mobile number"
-                  />
-                </div>
-              </div>
-              <span>{this.state.mobileError}</span>
-
-              <div className="form-group row formAlign">
-                <label className="col-form-label text">Password</label>
-                <div className="input">
-                  <input
-                    type="password"
-                    onChange={this.handleChange}
-                    value={this.state.password}
-                    className="form-control"
-                    name="password"
-                    placeholder="Enter your password"
-                  />
-                </div>
-              </div>
-              <span>{this.state.passwordError}</span>
-              <div className="form-group row formAlign">
-                <label className="col-form-label text">
-                  Confirm Password
-                </label>
-                <div className="input">
-                  <input
-                    type="password"
-                    onChange={this.handleChange}
-                    value={this.state.confirmPassword}
-                    className="form-control"
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                  />
-                </div>
-              </div>
-              <span>{this.state.confirmPasswordError}</span>
-              <div>
-                <button type="submit" className="btn jjj">
-                <p style={{color:'white', fontWeight:'bold', height:'auto'}}>Register</p>
-                </button>
-              </div>
-              <div className="row ooo">
-              <p id="aaaa">Don't have an account?</p>
-                <button
-                  id="aaa"
-                  className="btn btn-link"
-                  onClick={this.login}
+              <div className="formBackground">
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontWeight: "bold",
+                    fontSize: 30,
+                    paddingTop: "4%",
+                    marginBottom: 35,
+                  }}
                 >
-                 Login Here
-                </button>
+                  Register to ThoughtPost
+                </div>
+                <div className="form-group row formAlign">
+                  <label className="col-form-label text">Name</label>
+                  <div className="input">
+                    <input
+                      type="text"
+                      onChange={this.handleChange}
+                      value={this.state.name}
+                      className="form-control"
+                      name="name"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                </div>
+                <span>{this.state.nameError}</span>
+
+                <div className="form-group row formAlign">
+                  <label className=" col-form-label text">Email</label>
+                  <div className="input">
+                    <input
+                      type="text"
+                      onChange={this.handleChange}
+                      value={this.state.email}
+                      className="form-control"
+                      name="email"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                </div>
+                <span>{this.state.emailError}</span>
+
+                <div className="form-group row formAlign">
+                  <label className="col-form-label text">Mobile</label>
+                  <div className="input">
+                    <input
+                      type="text"
+                      onChange={this.handleChange}
+                      value={this.state.mobile}
+                      className="form-control"
+                      name="mobile"
+                      placeholder="Enter your mobile number"
+                    />
+                  </div>
+                </div>
+                <span>{this.state.mobileError}</span>
+
+                <div className="form-group row formAlign">
+                  <label className="col-form-label text">Password</label>
+                  <div className="input">
+                    <input
+                      type="password"
+                      onChange={this.handleChange}
+                      value={this.state.password}
+                      className="form-control"
+                      name="password"
+                      placeholder="Enter your password"
+                    />
+                  </div>
+                </div>
+                <span>{this.state.passwordError}</span>
+                <div className="form-group row formAlign">
+                  <label className="col-form-label text">Confirm</label>
+                  <div className="input">
+                    <input
+                      type="password"
+                      onChange={this.handleChange}
+                      value={this.state.confirmPassword}
+                      className="form-control"
+                      name="confirmPassword"
+                      placeholder="Confirm Password"
+                    />
+                  </div>
+                </div>
+                <span>{this.state.confirmPasswordError}</span>
+                <div>
+                  <button type="submit" className="btn jjj">
+                    <p
+                      style={{
+                        color: "white",
+                        fontWeight: "bold",
+                        height: "auto",
+                      }}
+                    >
+                      Register
+                    </p>
+                  </button>
+                </div>
+                <div className="row ooo">
+                  <p id="aaaa">Don't have an account?</p>
+                  <button
+                    id="aaa"
+                    className="btn btn-link"
+                    onClick={this.login}
+                  >
+                    Login Here
+                  </button>
+                </div>
               </div>
             </form>
           </div>

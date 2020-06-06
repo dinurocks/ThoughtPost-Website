@@ -12,8 +12,8 @@ import {
   profileInfo,
   updateProfileInfo,
   updateUserFollowingName,
-  updatePostUserName
-  
+  updatePostUserName,
+  updateUserSharedName,
 } from "./http.service";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -30,8 +30,9 @@ import {
 import { faHeart, faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import Modal from "react-bootstrap/Modal";
 import "bootstrap/dist/css/bootstrap.min.css";
+import moment from "moment";
 
-import { myActionTkn } from "../actions/action";
+// import { myActionTkn } from "../actions/action";
 
 export class Homepage extends Component {
   constructor(props) {
@@ -64,7 +65,8 @@ export class Homepage extends Component {
       nameError: "",
       emailError: "",
       mobileError: "",
-      postName:''
+      postName: "",
+      file: "",
     };
   }
 
@@ -76,9 +78,8 @@ export class Homepage extends Component {
           name: this.state.userInfo.name,
           email: this.state.userInfo.email,
           mobile: JSON.stringify(this.state.userInfo.mobile),
-        
         });
-        this.setState({postName:this.state.name})
+        this.setState({ postName: this.state.name });
       })
       .catch((err) => {
         console.log(err);
@@ -91,6 +92,17 @@ export class Homepage extends Component {
           let { showing } = this.state;
           showing.splice(index, 1);
           this.setState({ showing });
+          showUserPost()
+            .then((res) => {
+              this.setState({ showing: res.data });
+            })
+            .catch((err) => {
+              if (err.response) {
+                console.log(err.response.data);
+              } else {
+                console.log(err);
+              }
+            });
         })
         .catch((err) => {
           if (err.response) {
@@ -103,14 +115,20 @@ export class Homepage extends Component {
   };
 
   handleSubmit = (event) => {
+    console.log(this.state.file);
     event.preventDefault();
-    feedpost({
-      showtkn: this.state.showtkn,
-      id: this.state.userid,
-      post: this.state.post,
-    })
+    let fd = new FormData();
+    fd.append("id", this.props.usrid);
+    fd.append("post", this.state.post);
+    fd.append("myImage", this.state.file);
+
+    for (var value of fd.values()) {
+      console.log(value);
+    }
+
+    feedpost(fd)
       .then((res1) => {
-        this.setState({ post: "", remainingLength: 200 });
+        this.setState({ post: "", remainingLength: 200, file: "" });
         showUserPost()
           .then((res) => {
             this.setState({ showing: res.data });
@@ -124,7 +142,7 @@ export class Homepage extends Component {
           });
       })
       .catch((err) => {
-        console.error("error occoured while user post", err);
+        console.error("error occoured while user post", err.response.data);
       });
   };
 
@@ -164,6 +182,7 @@ export class Homepage extends Component {
     if (window.confirm("Are you sure you want to Logout")) {
       getUsersByID(this.props.usrid)
         .then((res) => {
+          localStorage.clear();
           localStorage.removeItem("Token");
           this.props.history.push("/login");
         })
@@ -271,7 +290,8 @@ export class Homepage extends Component {
       ? (nameError = "No special characters!")
       : (nameError = "");
 
-    let emreg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    // let emreg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    let emreg = /^\w+([-]?\w+)*@\w+([-]?\w+)*(\.\w{2,3})+$/;
     !emreg.test(this.state.email)
       ? (emailError = "Please enter a valid email")
       : c.length
@@ -309,19 +329,26 @@ export class Homepage extends Component {
               submitp: "Edit",
               nameError: "",
               emailError: "",
-              mobileError: ""
+              mobileError: "",
             });
 
-            
+            updatePostUserName(this.props.usrid, this.state.name).catch(
+              (err) => {
+                console.log(err);
+              }
+            );
 
-           updatePostUserName(this.props.usrid, this.state.name).catch(err=>{
-             console.log(err);
-           });
+            updateUserFollowingName(this.props.usrid, this.state.name).catch(
+              (err) => {
+                console(err);
+              }
+            );
 
-           updateUserFollowingName(this.props.usrid,this.state.name).catch(err=>{
-             console(err);
-           })
-          
+            updateUserSharedName(this.props.usrid, this.state.name).catch(
+              (err) => {
+                console(err);
+              }
+            );
 
             getUsers()
               .then((res) => {
@@ -333,30 +360,22 @@ export class Homepage extends Component {
 
             this.showUserData();
             showUserPost()
-            .then((res) => {
-              this.setState({ showing: res.data });
-            })
-            .catch((err) => {
-              if (err.response) {
-                console.log(err.response.data);
-              } else {
-                console.log(err);
-              }
-            });
-           
- 
-
+              .then((res) => {
+                this.setState({ showing: res.data });
+              })
+              .catch((err) => {
+                if (err.response) {
+                  console.log(err.response.data);
+                } else {
+                  console.log(err);
+                }
+              });
           })
           .catch((err) => {
             console.log(err);
           });
       }
-
-    
     }
-
-   
-
   };
 
   cancel = () => {
@@ -368,6 +387,10 @@ export class Homepage extends Component {
       mobileError: "",
     });
     this.showUserData();
+  };
+
+  fileUpload = (e) => {
+    this.setState({ file: e.target.files[0] });
   };
 
   render() {
@@ -387,7 +410,6 @@ export class Homepage extends Component {
       x.following.find((y) => y.username === this.state.postName)
     );
     function compare(a, b) {
-      
       const bandA = a.name.toUpperCase();
       const bandB = b.name.toUpperCase();
 
@@ -410,7 +432,7 @@ export class Homepage extends Component {
     }
 
     var postArray = [];
-    
+
     const result = this.state.registeredUsers.filter((x) =>
       x.following.find((y) => y.username === this.state.postName)
     );
@@ -431,6 +453,7 @@ export class Homepage extends Component {
             _id: sharedPost[0]._id,
             user: sharedPost[0].user,
             post: sharedPost[0].post,
+            postImage: sharedPost[0].postImage,
             time: x.sharedTime,
             likeCount: sharedPost[0].likeCount,
             likes: sharedPost[0].likes,
@@ -444,12 +467,11 @@ export class Homepage extends Component {
       return new Date(b.time) - new Date(a.time);
     });
 
+    // console.log("data", postArray);
     return (
-      <div className={!this.state.searchFollowUser && "bgrd"}>
+      <div className={"bckgrnd1"}>
         <div className="container ">
           <div className="row" style={{ paddingTop: 20 }}>
-            
-
             <div>
               <input
                 type="text"
@@ -469,21 +491,21 @@ export class Homepage extends Component {
 
             <div className="row">
               <button
-                style={{ border: "none", marginLeft: -280, marginTop: -3 }}
-                className="btn "
+                style={{ border: "none", marginLeft: -220, marginTop: -3 }}
+                className=" profileButton"
                 onClick={this.toggleProfile}
               >
                 <FontAwesomeIcon
                   icon={faUser}
                   size="lg"
-                  color="grey"
+                  color="black"
                   style={{ marginRight: 160 }}
                 />
                 <p
                   style={{
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: "bold",
-                    color: "grey",
+                    color: "black",
                     marginTop: -25,
                   }}
                 >
@@ -492,14 +514,14 @@ export class Homepage extends Component {
               </button>
             </div>
 
-            <div className="">
+            <div className="logout" style={{ marginLeft: 20 }}>
               <button
                 type="button"
-                className="btn logout"
+                className="btn "
+                style={{ boxShadow: "0px 39px 80px -9px #000" }}
                 onClick={this.handleLogout}
                 value="Submit"
               >
-                
                 <FontAwesomeIcon icon={faSignOutAlt} size="lg" color="white" />
               </button>
             </div>
@@ -507,12 +529,15 @@ export class Homepage extends Component {
 
           <div>
             <table
+              className=""
               style={{
                 marginLeft: 55,
                 marginTop: 10,
-                backgroundColor: "lightgrey",
+
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
                 width: 500,
                 borderRadius: 10,
+                boxShadow: "0px 39px 80px -9px #000",
                 zIndex: 100,
               }}
             >
@@ -538,10 +563,11 @@ export class Homepage extends Component {
                         (follow) => follow.username === this.state.postName
                       ) ? (
                         <button
+                          className="followButton"
                           style={{
-                            backgroundColor: "none",
+                            backgroundColor: "white",
                             border: "none",
-                            
+
                             padding: 5,
                           }}
                           onClick={() => {
@@ -556,10 +582,11 @@ export class Homepage extends Component {
                         </button>
                       ) : (
                         <button
+                          className="followButton"
                           style={{
-                            backgroundColor: "none",
+                            backgroundColor: "white",
                             border: "none",
-                           
+
                             padding: 5,
                           }}
                           onClick={() => {
@@ -577,20 +604,24 @@ export class Homepage extends Component {
                   </tr>
                 ))}
               </tbody>
-
-              <div style={{ flex: 1 }}>
-                {this.state.searchFollowUser.length > 0 &&
-                showFollowUsers.length === 0 ? (
-                  <p
-                    style={{ fontSize: 20, textAlign: "left", marginLeft: 35 }}
-                  >
-                    No matching users found
-                  </p>
-                ) : (
-                  <> </>
-                )}
-              </div>
             </table>
+            <div style={{ flex: 1 }}>
+              {this.state.searchFollowUser.length > 0 &&
+              showFollowUsers.length === 0 ? (
+                <p
+                  style={{
+                    fontSize: 20,
+                    textAlign: "left",
+                    marginLeft: 210,
+                    fontWeight: "bolder",
+                  }}
+                >
+                  No matching users found
+                </p>
+              ) : (
+                <> </>
+              )}
+            </div>
           </div>
 
           {this.state.searchFollowUser.length === 0 && (
@@ -613,15 +644,46 @@ export class Homepage extends Component {
                       rows="2"
                       placeholder="Enter your thoughts here"
                     ></textarea>
-
+                    {/* <input
+                      type="file"
+                      name="myImage"
+                      onChange={this.fileUpload}
+                    /> */}
+                    {/* bootstrap file upload */}
+                    <div
+                      className="custom-file "
+                      style={{
+                        width: "30%",
+                        marginLeft: 20,
+                        marginTop: 15,
+                        marginRight: 40,
+                      }}
+                    >
+                      <input
+                        type="file"
+                        className="custom-file-input"
+                        accept="image/*"
+                        name="myImage"
+                        // multiple="multiple"
+                        onChange={this.fileUpload}
+                      />
+                      <label className="custom-file-label" htmlFor="customFile">
+                        {this.state.file
+                          ? this.state.file.name
+                          : "No File Chosen"}
+                      </label>
+                    </div>
+                    {/* bootstrap file upload  */}
                     <div>
                       <button
                         type="submit"
                         className="btn  sp"
+                        style={{ boxShadow: "0px 39px 80px -9px #000" }}
                         value="Submit"
-                        disabled={this.state.post.length === 0}
+                        disabled={
+                          this.state.file === "" && this.state.post.length === 0
+                        }
                       >
-                       
                         <FontAwesomeIcon
                           icon={faPaperPlane}
                           size="lg"
@@ -633,41 +695,126 @@ export class Homepage extends Component {
                 </form>
 
                 {postArray.length === 0 ? (
-                  <p>Follow users to see their posts</p>
+                  <p
+                    style={{
+                      paddingBottom: 380,
+                      textAlign: "center",
+                      paddingTop: 40,
+                      fontSize: 20,
+                    }}
+                  >
+                    Follow users to see their posts
+                  </p>
                 ) : (
-                  <div className="kk">
-                    <div className="table" style={{ zIndex: 100 }}>
+                  <div className="kk" style={{ flex: 1, zIndex: 1 }}>
+                    <div className="table" style={{}}>
                       {postArray.map((show, i) => (
-                        <div key={i} className="tr11">
+                        <div key={i} className="tr11" style={{ flex: 1 }}>
                           <div>
                             <p
                               className="  shownameadj "
-                              style={{ flexDirection: "row" }}
+                              style={{
+                                flexDirection: "row",
+                                fontWeight: "bold",
+                              }}
                             >
                               {" "}
                               {show.sharedBy ? (
                                 <p>
-                                  {" "}
-                                  {show.user}{" "}
                                   <p
                                     style={{
                                       color: "grey",
-                                      marginTop: -25,
-                                      marginLeft: 100,
                                     }}
                                   >
-                                    {" "}
-                                    - (Shared By {show.sharedBy}){" "}
-                                  </p>{" "}
+                                    (Shared By: {show.sharedBy}){" "}
+                                  </p>
+                                  <div
+                                    style={{ marginBottom: -45 }}
+                                    className="row"
+                                  >
+                                    <img
+                                      src={
+                                        " http://localhost:3003/static/" +
+                                        show.postImage
+                                      }
+                                      style={{
+                                        height: 48,
+                                        width: 48,
+                                        borderRadius: "50%",
+                                        marginLeft: 15,
+                                        marginRight: 10,
+                                        marginTop: 1,
+                                      }}
+                                    />
+                                    <p>
+                                      {show.user}{" "}
+                                      <p style={{ color: "grey" }}>
+                                        ({moment(show.time).fromNow()})
+                                      </p>{" "}
+                                    </p>
+                                  </div>
                                 </p>
                               ) : (
-                                show.user
-                              )}{" "}
+                                <div
+                                  className="row"
+                                  style={{ marginBottom: -45 }}
+                                >
+                                  <img
+                                    src={
+                                      " http://localhost:3003/static/" +
+                                      show.postImage
+                                    }
+                                    style={{
+                                      height: 48,
+                                      width: 48,
+                                      borderRadius: "50%",
+                                      marginLeft: 15,
+                                      marginRight: 10,
+                                      marginTop: 1,
+                                    }}
+                                  />
+                                  <p>
+                                    {" "}
+                                    {show.user}
+                                    <p style={{ color: "grey" }}>
+                                      ({moment(show.time).fromNow()})
+                                    </p>
+                                  </p>
+                                </div>
+                              )}
                             </p>
-                            <hr />
-                            <br />
 
-                            <p className="postswrap">{show.post}</p>
+                            {show.post && (
+                              <p className="postswrap">
+                                <br />
+                                {show.post}
+                                <br />
+                              </p>
+                            )}
+
+                            <hr />
+
+                            <p style={{ marginBottom: -17 }}>
+                              {show.postImage && (
+                                <img
+                                  // src="http://localhost:3003/static//15907626979034.png" // ye toh ffixx kr diya
+                                  src={
+                                    " http://localhost:3003/static/" +
+                                    show.postImage
+                                  }
+                                  style={{
+                                    // marginLeft: -5,
+                                    // maxWidth: "1",
+                                    width: "100%",
+                                    height: "50%",
+                                    objectFit: "cover",
+                                    marginTop: -17,
+                                  }}
+                                  alt="postImages"
+                                />
+                              )}
+                            </p>
+
                             <hr />
 
                             <p>
@@ -707,21 +854,18 @@ export class Homepage extends Component {
                                   <FontAwesomeIcon
                                     icon={faHeart}
                                     size="lg"
-                                  
-                                  />{" "}
-                                  : {show.likeCount}
+                                  /> : {show.likeCount}
                                 </button>
                               )}
 
-                             
                               <button
                                 type="button"
-                                class=""
+                                className="shareButton"
                                 data-toggle="modal"
                                 data-target="#exampleModalLong"
                                 style={{
                                   marginLeft: 430,
-                                  backgroundColor: "rgb(247, 247, 247)",
+                                  backgroundColor: "rgba(247, 247, 247,0)",
                                   border: "none",
                                 }}
                                 onClick={() => {
@@ -734,8 +878,6 @@ export class Homepage extends Component {
                                   color="black"
                                 />
                               </button>
-
-                           
 
                               <Modal
                                 show={this.state.onShare}
@@ -772,11 +914,9 @@ export class Homepage extends Component {
                                           <td>
                                             <p
                                               style={{
-                                              
                                                 fontSize: 20,
                                                 marginRight: 90,
                                                 marginBottom: 20,
-                                                
                                               }}
                                             >
                                               {kk.name}
@@ -846,27 +986,24 @@ export class Homepage extends Component {
                                     )}
                                   </div>
                                 </Modal.Body>
-                           
                               </Modal>
-                              
+
                               <Modal
                                 show={this.state.onProfile}
                                 onHide={this.toggleProfile}
                               >
-                                <Modal.Header style={{ backgroundColor: "grey" }}>
-                                  
-                                  <Modal.Title>
-                                    {this.state.postName}
+                                <Modal.Header>
+                                  <Modal.Title className="w-100 text-center">
+                                    User Info
                                   </Modal.Title>
                                 </Modal.Header>
-                                <Modal.Body>
+                                <Modal.Body style={{ margin: "auto" }}>
                                   <div className="form-group row formAlign1">
                                     <label className="col-form-label text1">
                                       Name
                                     </label>
-                                    <div className="input1" >
+                                    <div className="input1">
                                       <input
-                                      
                                         type="text"
                                         onChange={this.handleChange}
                                         value={this.state.name}
@@ -885,7 +1022,6 @@ export class Homepage extends Component {
                                     </label>
                                     <div className="input1">
                                       <input
-                                       
                                         type="text"
                                         onChange={this.handleChange}
                                         value={this.state.email}
@@ -904,7 +1040,6 @@ export class Homepage extends Component {
                                     </label>
                                     <div className="input1">
                                       <input
-                                      
                                         type="text"
                                         onChange={this.handleChange}
                                         value={this.state.mobile}
@@ -916,26 +1051,33 @@ export class Homepage extends Component {
                                     </div>
                                   </div>
                                   <p>{this.state.mobileError}</p>
-                                  <div className='edit'>
+                                  <div style={{ margin: "auto" }}>
                                     <button
-                                    className='btn'
+                                      className="btn"
                                       onClick={this.save}
-                                      style= {this.state.submitp==='Edit' ?{
-                                        backgroundColor: "skyblue",
-                                        height: 40,
-                                        width: "auto",
-                                        borderRadius: 8,
-                                      } : { backgroundColor: "green",
-                                      height: 40,
-                                      width: "auto",
-                                      borderRadius: 8, }  }
+                                      style={
+                                        this.state.submitp === "Edit"
+                                          ? {
+                                              backgroundColor: "skyblue",
+                                              height: 40,
+                                              width: "auto",
+                                              borderRadius: 8,
+                                              alignSelf: "center",
+                                            }
+                                          : {
+                                              backgroundColor: "green",
+                                              height: 40,
+                                              width: "auto",
+                                              borderRadius: 8,
+                                            }
+                                      }
                                     >
                                       <p
                                         style={{
                                           color: "white",
                                           fontSize: 17,
                                           textAlign: "center",
-                                          
+
                                           fontWeight: "bold",
                                         }}
                                       >
@@ -945,7 +1087,7 @@ export class Homepage extends Component {
 
                                     {!this.state.editable && (
                                       <button
-                                      className='btn'
+                                        className="btn"
                                         onClick={this.cancel}
                                         style={{
                                           backgroundColor: "lightgrey",
@@ -969,7 +1111,6 @@ export class Homepage extends Component {
                                   </div>
                                 </Modal.Body>
                               </Modal>
-                           
 
                               {this.state.postName === show.user ? (
                                 <button
@@ -991,9 +1132,7 @@ export class Homepage extends Component {
                           </div>
                         </div>
                       ))}
-                     
                     </div>
-                  
                   </div>
                 )}
               </div>
@@ -1011,6 +1150,5 @@ const mapStateToProps = (state) => ({
   usrid: state.myReducertkn.id,
   username: state.myReducertkn.username,
 });
-
 
 export default connect(mapStateToProps)(Homepage);
