@@ -26,6 +26,9 @@ import {
   faShare,
   faShareSquare,
   faUser,
+  faCamera,
+  faSpaceShuttle,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHeart, faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import Modal from "react-bootstrap/Modal";
@@ -53,7 +56,7 @@ export class Homepage extends Component {
       searchShareUser: "",
       onShare: false,
       sharePostId: "",
-      disabledShareButton: -1,
+      disableShareButton: [],
       shareButtonText: false,
       onProfile: false,
       name: "",
@@ -66,24 +69,13 @@ export class Homepage extends Component {
       emailError: "",
       mobileError: "",
       postName: "",
-      file: "",
+      file: null,
+      userPhoto: null,
+      showLikeNames: [],
+      showLikePostId: "",
+      likesNameVisible: false,
     };
   }
-
-  showUserData = () =>
-    profileInfo(this.props.usrid)
-      .then((res) => {
-        this.setState({ userInfo: res.data });
-        this.setState({
-          name: this.state.userInfo.name,
-          email: this.state.userInfo.email,
-          mobile: JSON.stringify(this.state.userInfo.mobile),
-        });
-        this.setState({ postName: this.state.name });
-      })
-      .catch((err) => {
-        console.log(err);
-      });
 
   delUser = (id, index) => {
     if (window.confirm("Do you want to delete this post?")) {
@@ -117,10 +109,14 @@ export class Homepage extends Component {
   handleSubmit = (event) => {
     console.log(this.state.file);
     event.preventDefault();
+    let userImage = this.state.registeredUsers.filter(
+      (x) => x._id === this.props.usrid
+    );
     let fd = new FormData();
     fd.append("id", this.props.usrid);
     fd.append("post", this.state.post);
-    fd.append("myImage", this.state.file);
+    this.state.file && fd.append("myImage", this.state.file);
+    fd.append("userPhoto", userImage[0].userPhoto);
 
     for (var value of fd.values()) {
       console.log(value);
@@ -155,8 +151,23 @@ export class Homepage extends Component {
     this.setState({ [e.target.name]: e.target.value });
   };
 
+  showUserData = () =>
+    profileInfo(this.props.usrid)
+      .then((res) => {
+        this.setState({ userInfo: res.data });
+        this.setState({
+          name: this.state.userInfo.name,
+          email: this.state.userInfo.email,
+          mobile: JSON.stringify(this.state.userInfo.mobile),
+          userPhoto: this.state.userInfo.userPhoto,
+        });
+        this.setState({ postName: this.state.name });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+
   componentDidMount() {
-    this.showUserData();
     showUserPost()
       .then((res) => {
         this.setState({ showing: res.data });
@@ -176,6 +187,7 @@ export class Homepage extends Component {
       .catch((err) => {
         console.log(err);
       });
+    this.showUserData();
   }
 
   handleLogout = () => {
@@ -237,7 +249,11 @@ export class Homepage extends Component {
   };
 
   toggleOverlay = (postId) => {
-    this.setState({ onShare: !this.state.onShare, sharePostId: postId });
+    this.setState({
+      onShare: !this.state.onShare,
+      sharePostId: postId,
+      disableShareButton: [],
+    });
   };
 
   toggleProfile = () => {
@@ -245,7 +261,7 @@ export class Homepage extends Component {
   };
 
   handleShare = (userId) => {
-    this.setState({ disabledShareButton: userId, shareButtonText: true });
+    // this.setState({ disabledShareButton: userId, shareButtonText: true });
     updateSharedPosts({
       id: userId,
       postId: this.state.sharePostId,
@@ -260,6 +276,10 @@ export class Homepage extends Component {
           .catch((err) => {
             console.log(err);
           });
+
+        this.setState({
+          disableShareButton: [...this.state.disableShareButton, userId],
+        });
       })
       .catch((err) => {
         console.log(err);
@@ -317,12 +337,13 @@ export class Homepage extends Component {
       this.setState({ editable: false, submitp: "Save" });
     } else {
       if (this.validate()) {
-        updateProfileInfo(
-          this.props.usrid,
-          this.state.name,
-          this.state.email,
-          this.state.mobile
-        )
+        let newFd = new FormData();
+        newFd.append("id", this.props.usrid);
+        newFd.append("name", this.state.name);
+        newFd.append("email", this.state.email);
+        newFd.append("mobile", this.state.mobile);
+        this.state.userPhoto && newFd.append("userPhoto", this.state.userPhoto);
+        updateProfileInfo(newFd)
           .then((res) => {
             this.setState({
               editable: true,
@@ -331,12 +352,47 @@ export class Homepage extends Component {
               emailError: "",
               mobileError: "",
             });
+            this.showUserData()
+              .then((ress) => {
+                updatePostUserName(
+                  this.props.usrid,
+                  this.state.name,
+                  this.state.userPhoto
+                )
+                  .then((res) => {
+                    console.log("post photo name update");
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                  });
 
-            updatePostUserName(this.props.usrid, this.state.name).catch(
-              (err) => {
+                showUserPost()
+                  .then((res) => {
+                    this.setState({ showing: res.data });
+                  })
+                  .catch((err) => {
+                    if (err.response) {
+                      console.log(err.response.data);
+                    } else {
+                      console.log(err);
+                    }
+                  });
+              })
+              .catch((err) => {
                 console.log(err);
-              }
-            );
+              });
+
+            showUserPost()
+              .then((res) => {
+                this.setState({ showing: res.data });
+              })
+              .catch((err) => {
+                if (err.response) {
+                  console.log(err.response.data);
+                } else {
+                  console.log(err);
+                }
+              });
 
             updateUserFollowingName(this.props.usrid, this.state.name).catch(
               (err) => {
@@ -356,19 +412,6 @@ export class Homepage extends Component {
               })
               .catch((err) => {
                 console.log(err);
-              });
-
-            this.showUserData();
-            showUserPost()
-              .then((res) => {
-                this.setState({ showing: res.data });
-              })
-              .catch((err) => {
-                if (err.response) {
-                  console.log(err.response.data);
-                } else {
-                  console.log(err);
-                }
               });
           })
           .catch((err) => {
@@ -391,6 +434,27 @@ export class Homepage extends Component {
 
   fileUpload = (e) => {
     this.setState({ file: e.target.files[0] });
+  };
+
+  uploadUserPhoto = (e) => {
+    this.setState({ userPhoto: e.target.files[0] });
+    console.log("userPhoto", this.state.userPhoto);
+  };
+
+  showMoreLikes = (postId) => {
+    let likeName = this.state.showing.filter((x) => x._id === postId);
+    let ln = likeName.map((x) => x.likes.map((y) => y.username));
+
+    ln = ln[0].slice(1);
+    this.setState({
+      showLikeNames: ln,
+      showLikePostId: postId,
+      likesNameVisible: true,
+    });
+  };
+
+  hideLikeName = () => {
+    this.setState({ likesNameVisible: false });
   };
 
   render() {
@@ -453,6 +517,7 @@ export class Homepage extends Component {
             _id: sharedPost[0]._id,
             user: sharedPost[0].user,
             post: sharedPost[0].post,
+            userPhoto: sharedPost[0].userPhoto,
             postImage: sharedPost[0].postImage,
             time: x.sharedTime,
             likeCount: sharedPost[0].likeCount,
@@ -467,12 +532,36 @@ export class Homepage extends Component {
       return new Date(b.time) - new Date(a.time);
     });
 
-    // console.log("data", postArray);
+    // console.log("post", postArray);
     return (
       <div className={"bckgrnd1"}>
-        <div className="container ">
-          <div className="row" style={{ paddingTop: 20 }}>
-            <div>
+        <div
+          style={{
+            backgroundColor: "rgb(245,245,245)",
+            padding: 20,
+          }}
+        >
+          <div
+            className="row"
+            style={
+              {
+                // paddingTop: "20px",
+              }
+            }
+          >
+            <div
+              className="col-md-2"
+              style={{
+                marginTop: -10,
+              }}
+            >
+              <img
+                src={require("../images/think.png")}
+                height="50"
+                width="50"
+              />
+            </div>
+            <div className="col-md-6" style={{ marginLeft: "-5%" }}>
               <input
                 type="text"
                 value={this.state.searchFollowUser}
@@ -480,41 +569,107 @@ export class Homepage extends Component {
                 placeholder="Search users to follow"
                 onChange={this.handleChange}
                 className="form-control fa fa-search form-control-feedback  "
-                style={{
-                  width: 500,
-                  marginRight: 435,
-                  marginLeft: 70,
-                  marginTop: -2,
-                }}
+                style={{ width: "80%" }}
               />
             </div>
-
-            <div className="row">
+            <div className="col-md-2" style={{ paddingLeft: "2%" }}>
               <button
-                style={{ border: "none", marginLeft: -220, marginTop: -3 }}
+                style={{
+                  border: "none",
+                }}
                 className=" profileButton"
                 onClick={this.toggleProfile}
               >
-                <FontAwesomeIcon
-                  icon={faUser}
-                  size="lg"
-                  color="black"
-                  style={{ marginRight: 160 }}
-                />
+                <div className="row">
+                  <FontAwesomeIcon
+                    icon={faUser}
+                    size="lg"
+                    color="black"
+                    style={{ marginRight: 10 }}
+                  />
+                  <div
+                    style={{
+                      fontWeight: "bolder",
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {this.state.postName}
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div className="col-md-2" style={{}}>
+              <button
+                type="button"
+                className="btn logout "
+                style={{ boxShadow: "0px 39px 80px -9px #000" }}
+                onClick={this.handleLogout}
+                value="Submit"
+              >
+                <FontAwesomeIcon icon={faSignOutAlt} size="lg" color="white" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="container ">
+          {/* <div className="row" style={{ paddingTop: 20 }}>
+            <div style={{ width: "40%" }}>
+              <input
+                type="text"
+                value={this.state.searchFollowUser}
+                name="searchFollowUser"
+                placeholder="Search users to follow"
+                onChange={this.handleChange}
+                className="form-control fa fa-search form-control-feedback  "
+              />
+            </div>
+            <div
+            // className="row"
+            // style={{ marginLeft: "55%", marginTop: "-3.5%" }}
+            >
+              <div
+                // style={{ minWidth: "30%" }}
+                style={{ flexDirection: "row" }}
+              >
+                <button
+                  style={{
+                    border: "none",
+                    //  marginLeft: -220,
+                    // marginTop: -3,
+                  }}
+                  className=" profileButton"
+                  onClick={this.toggleProfile}
+                >
+                  <div
+                  //  style={{ marginLeft: "45%" }}
+                  >
+                    <FontAwesomeIcon icon={faUser} size="lg" color="black" />
+                  </div>
+                </button>
+              </div>
+              <div
+              //  style={{ marginLeft: "100%", width: "100%" }}
+              >
                 <p
                   style={{
                     fontSize: 17,
                     fontWeight: "bold",
                     color: "black",
-                    marginTop: -25,
+
+                    // marginTop: -25,
+                    // minWidth: "50%",
                   }}
                 >
                   {this.state.postName}
                 </p>
-              </button>
+              </div>
             </div>
 
-            <div className="logout" style={{ marginLeft: 20 }}>
+            <div
+              className="logout"
+              style={{ marginLeft: "17%", marginTop: "-3%" }}
+            >
               <button
                 type="button"
                 className="btn "
@@ -525,7 +680,7 @@ export class Homepage extends Component {
                 <FontAwesomeIcon icon={faSignOutAlt} size="lg" color="white" />
               </button>
             </div>
-          </div>
+          </div> */}
 
           <div>
             <table
@@ -545,13 +700,32 @@ export class Homepage extends Component {
                 {showFollowUsers.map((mk, i) => (
                   <tr key={i}>
                     <td>
+                      <img
+                        src={
+                          mk.userPhoto
+                            ? " http://localhost:3003/static/" + mk.userPhoto
+                            : require("../images/user.png")
+                        }
+                        style={{
+                          height: 40,
+                          width: 40,
+                          borderRadius: 20,
+                          marginLeft: 10,
+                          objectFit: "cover",
+                        }}
+                        alt="user image"
+                      />
+                    </td>
+                    <td>
                       <p
                         style={{
-                          marginTop: 22,
-                          fontSize: 20,
-                          marginRight: 90,
-                          marginBottom: 20,
-                          marginLeft: 40,
+                          marginTop: 12,
+                          fontSize: 18,
+                          marginRight: 230,
+                          // marginBottom: 20,
+                          // marginLeft: 40,
+                          padding: 10,
+                          textAlign: "left",
                         }}
                       >
                         {mk.name}
@@ -653,7 +827,7 @@ export class Homepage extends Component {
                     <div
                       className="custom-file "
                       style={{
-                        width: "30%",
+                        width: "25%",
                         marginLeft: 20,
                         marginTop: 15,
                         marginRight: 40,
@@ -674,7 +848,7 @@ export class Homepage extends Component {
                       </label>
                     </div>
                     {/* bootstrap file upload  */}
-                    <div>
+                    <div style={{ marginLeft: "-3%" }}>
                       <button
                         type="submit"
                         className="btn  sp"
@@ -729,13 +903,16 @@ export class Homepage extends Component {
                                     (Shared By: {show.sharedBy}){" "}
                                   </p>
                                   <div
-                                    style={{ marginBottom: -45 }}
+                                    style={{ marginBottom: -35 }}
                                     className="row"
                                   >
                                     <img
                                       src={
-                                        " http://localhost:3003/static/" +
-                                        show.postImage
+                                        show.userPhoto &&
+                                        show.userPhoto !== "null"
+                                          ? " http://localhost:3003/static/" +
+                                            show.userPhoto
+                                          : require("../images/user.png")
                                       }
                                       style={{
                                         height: 48,
@@ -748,8 +925,11 @@ export class Homepage extends Component {
                                     />
                                     <p>
                                       {show.user}{" "}
-                                      <p style={{ color: "grey" }}>
-                                        ({moment(show.time).fromNow()})
+                                      <p
+                                        style={{ color: "grey", fontSize: 13 }}
+                                      >
+                                        ({moment(new Date(show.time)).fromNow()}
+                                        )
                                       </p>{" "}
                                     </p>
                                   </div>
@@ -757,12 +937,15 @@ export class Homepage extends Component {
                               ) : (
                                 <div
                                   className="row"
-                                  style={{ marginBottom: -45 }}
+                                  style={{ marginBottom: -35 }}
                                 >
                                   <img
                                     src={
-                                      " http://localhost:3003/static/" +
-                                      show.postImage
+                                      show.userPhoto &&
+                                      show.userPhoto !== "null"
+                                        ? " http://localhost:3003/static/" +
+                                          show.userPhoto
+                                        : require("../images/user.png")
                                     }
                                     style={{
                                       height: 48,
@@ -776,8 +959,8 @@ export class Homepage extends Component {
                                   <p>
                                     {" "}
                                     {show.user}
-                                    <p style={{ color: "grey" }}>
-                                      ({moment(show.time).fromNow()})
+                                    <p style={{ color: "grey", fontSize: 13 }}>
+                                      ({moment(new Date(show.time)).fromNow()})
                                     </p>
                                   </p>
                                 </div>
@@ -794,7 +977,7 @@ export class Homepage extends Component {
 
                             <hr />
 
-                            <p style={{ marginBottom: -17 }}>
+                            <p style={{ paddingTop: 5, marginBottom: -10 }}>
                               {show.postImage && (
                                 <img
                                   // src="http://localhost:3003/static//15907626979034.png" // ye toh ffixx kr diya
@@ -806,8 +989,8 @@ export class Homepage extends Component {
                                     // marginLeft: -5,
                                     // maxWidth: "1",
                                     width: "100%",
-                                    height: "50%",
-                                    objectFit: "cover",
+                                    height: "500px",
+                                    objectFit: "contain",
                                     marginTop: -17,
                                   }}
                                   alt="postImages"
@@ -816,7 +999,92 @@ export class Homepage extends Component {
                             </p>
 
                             <hr />
+                            {show.likeCount !== 0 && (
+                              <div>
+                                <p
+                                  style={{
+                                    fontSize: 13,
 
+                                    // marginRight: 10,
+                                  }}
+                                  className="row"
+                                >
+                                  <p
+                                    className="row"
+                                    style={{
+                                      fontWeight: "bold",
+                                      // marginRight: 5,
+                                      marginLeft: 30,
+                                      marginBottom: -10,
+                                    }}
+                                  >
+                                    <p>Liked by: </p>
+                                    {show.likeCount &&
+                                      show.likes.map((x, i) => (
+                                        <p
+                                          style={{
+                                            fontWeight: "600",
+                                            marginLeft: 3,
+                                            // marginRight: 10,
+                                          }}
+                                        >
+                                          {i === 0 ? x.username : ""}
+                                          {/* {x.username},{" "} */}
+                                        </p>
+                                      ))}
+                                    <div>
+                                      {show.likeCount > 1 && (
+                                        <button
+                                          style={{
+                                            position: "absolute",
+                                            marginTop: -1,
+                                            // marginLeft: -2,
+                                            fontSize: 13,
+                                            // color: "skyblue",
+                                            fontWeight: "bold",
+                                          }}
+                                          type="button"
+                                          className="  showMore "
+                                          // onClick={() => {
+                                          //   this.showMoreLikes(show._id);
+                                          // }}
+                                          onMouseOver={() => {
+                                            this.showMoreLikes(show._id);
+                                          }}
+                                          onMouseLeave={this.hideLikeName}
+                                        >
+                                          and {show.likes.length - 1}{" "}
+                                          {show.likes.length - 1 === 1
+                                            ? "other"
+                                            : "others"}
+                                        </button>
+                                      )}
+                                    </div>
+                                    {this.state.showLikePostId === show._id &&
+                                      this.state.likesNameVisible && (
+                                        <div
+                                          style={{
+                                            backgroundColor:
+                                              "rgba(222, 216, 215,0.9)",
+                                            marginLeft: 150,
+                                            marginTop: 20,
+                                            padding: 8,
+                                            fontWeight: "600",
+                                            borderRadius: 10,
+                                            position: "absolute",
+                                            boxShadow:
+                                              " 0px 39px 80px -9px #000",
+                                          }}
+                                        >
+                                          {this.state.showLikeNames.map((x) => (
+                                            <div> {x} </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                  </p>
+                                </p>
+                              </div>
+                            )}
                             <p>
                               {show.likes &&
                               show.likes.find(
@@ -864,7 +1132,7 @@ export class Homepage extends Component {
                                 data-toggle="modal"
                                 data-target="#exampleModalLong"
                                 style={{
-                                  marginLeft: 430,
+                                  marginLeft: 360,
                                   backgroundColor: "rgba(247, 247, 247,0)",
                                   border: "none",
                                 }}
@@ -886,7 +1154,9 @@ export class Homepage extends Component {
                                 }}
                               >
                                 <Modal.Header
-                                  style={{ backgroundColor: "grey" }}
+                                  style={{
+                                    backgroundColor: "rgb(250,250,250)",
+                                  }}
                                 >
                                   <Modal.Title>
                                     <div>
@@ -904,19 +1174,39 @@ export class Homepage extends Component {
                                 </Modal.Header>
                                 <Modal.Body
                                   style={{
-                                    backgroundColor: "rgb(232, 232, 232)",
+                                    backgroundColor: "rgba(255, 255, 255,0.2)",
                                   }}
                                 >
-                                  <div>
+                                  <table>
                                     <tbody style={{ flex: 1 }}>
                                       {showShareUsers.map((kk, i) => (
-                                        <tr key={i}>
+                                        <tr key={i} className="shareModalTr">
+                                          <td style={{}}>
+                                            <img
+                                              src={
+                                                kk.userPhoto
+                                                  ? " http://localhost:3003/static/" +
+                                                    kk.userPhoto
+                                                  : require("../images/user.png")
+                                              }
+                                              style={{
+                                                height: 40,
+                                                width: 40,
+                                                borderRadius: 20,
+                                                marginLeft: 10,
+                                                objectFit: "cover",
+                                              }}
+                                              alt="user image"
+                                            />
+                                          </td>
                                           <td>
                                             <p
                                               style={{
-                                                fontSize: 20,
-                                                marginRight: 90,
-                                                marginBottom: 20,
+                                                fontSize: 18,
+                                                marginLeft: 10,
+                                                marginBottom: 2,
+                                                borderBottomWidth: 2,
+                                                borderBottomColor: "black",
                                               }}
                                             >
                                               {kk.name}
@@ -927,37 +1217,39 @@ export class Homepage extends Component {
                                             <button
                                               style={{
                                                 backgroundColor:
-                                                  "rgb(232, 232, 232)",
+                                                  "rgb(255, 255, 255)",
                                                 border: "none",
-                                                marginLeft: 200,
-                                                marginBottom: 18,
+                                                marginLeft: 230,
+                                                // marginBottom: 18,
+                                                // float: "right",
                                               }}
                                               onClick={() => {
                                                 this.handleShare(kk._id);
                                               }}
-                                              disabled={
-                                                this.state
-                                                  .disabledShareButton ===
-                                                kk._id
-                                              }
+                                              disabled={this.state.disableShareButton.find(
+                                                (x) => x === kk._id
+                                              )}
                                             >
-                                              {this.state.shareButtonText &&
-                                              this.state.disabledShareButton ===
-                                                kk._id ? (
+                                              {this.state.disableShareButton.find(
+                                                (x) => x === kk._id
+                                              ) ? (
                                                 <FontAwesomeIcon
-                                                  icon={faCheckCircle}
-                                                  size="2x"
+                                                  icon={faCheck}
+                                                  size="lg"
                                                   color="green"
                                                 />
                                               ) : (
                                                 <FontAwesomeIcon
-                                                  icon={faShareSquare}
+                                                  icon={faShare}
                                                   size="lg"
                                                   color="grey"
                                                 />
                                               )}
                                             </button>
                                           </td>
+                                          <br />
+                                          <br />
+                                          <br />
                                         </tr>
                                       ))}
                                     </tbody>
@@ -984,7 +1276,7 @@ export class Homepage extends Component {
                                     ) : (
                                       <> </>
                                     )}
-                                  </div>
+                                  </table>
                                 </Modal.Body>
                               </Modal>
 
@@ -995,6 +1287,47 @@ export class Homepage extends Component {
                                 <Modal.Header>
                                   <Modal.Title className="w-100 text-center">
                                     User Info
+                                    <div>
+                                      <img
+                                        src={
+                                          this.state.userPhoto
+                                            ? "http://localhost:3003/static/" +
+                                              this.state.userPhoto
+                                            : require("../images/user.png")
+                                        }
+                                        style={{
+                                          height: 75,
+                                          width: 75,
+                                          borderRadius: 37.5,
+                                        }}
+                                      />
+                                      <div
+                                        style={{
+                                          marginTop: -25,
+                                          marginLeft: 60,
+                                        }}
+                                      >
+                                        <label for="file-input">
+                                          <FontAwesomeIcon
+                                            icon={faCamera}
+                                            size="1x"
+                                            // onClick={this.uploadUserPhoto}
+                                            style={{ cursor: "pointer" }}
+                                          />
+                                        </label>
+
+                                        <input
+                                          id="file-input"
+                                          type="file"
+                                          name="userPhoto"
+                                          style={{
+                                            display: "none",
+                                          }}
+                                          onChange={this.uploadUserPhoto}
+                                          disabled={this.state.editable}
+                                        />
+                                      </div>
+                                    </div>
                                   </Modal.Title>
                                 </Modal.Header>
                                 <Modal.Body style={{ margin: "auto" }}>

@@ -59,14 +59,14 @@ export const profileInfo = (id) => {
   return axios.get(baseURL + "profileInfo", { params: { id } });
 };
 
-export const updateProfileInfo = (id, name, email, mobile) => {
-  return axios.get(baseURL + "updateProfileInfo", {
-    params: { id, name, email, mobile },
-  });
+export const updateProfileInfo = (newFd) => {
+  return axios.post(baseURL + "updateProfileInfo", newFd);
 };
 
-export const updatePostUserName = (id, name) => {
-  return axios.get(baseURL + "updatePostUserName", { params: { id, name } });
+export const updatePostUserName = (id, name, userPhoto) => {
+  return axios.get(baseURL + "updatePostUserName", {
+    params: { id, name, userPhoto },
+  });
 };
 
 export const updateUserFollowingName = (id, name) => {
